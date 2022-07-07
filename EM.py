@@ -3,6 +3,8 @@ from scipy.stats import poisson
 
 np.random.seed(19)
 
+
+# tune N, pi, lambdas with fake data. K = 7?
 N = 100
 
 # Actual parameters that we do not know
@@ -57,12 +59,6 @@ def MStep(gammaz,X, lambdas):
     newpis = np.divide(N_k,N)
     return newlambdas, newpis
 
-def ExpMax(X,K,iterations):
-    lambdas, pis = initialize_params(K)
-    for s in range(10000):
-        gamma = Estep(X,lambdas,pis)
-        lambdas, pis = MStep(gamma,X,lambdas)
-    return gamma, lambdas, pis
 
 # Evaluate Log likelihood
 def loglik(X,gammaz,lambdas,pis):
@@ -70,9 +66,40 @@ def loglik(X,gammaz,lambdas,pis):
     Q = np.multiply(gammaz,np.log(q))
     return np.sum(Q)
 
-z, l, p = ExpMax(X,2,5)
+
+'''
+#convergence test. T/F
+def conv(val_new, val_old, tol=1e-15):
+    return np.less((np.abs(val_new) - np.abs(val_old)), tol).all()
+    
+convergence expmax
+def ExpMax(X,K):
+    old_lambdas, old_pis = 1,0
+    new_lambdas, new_pis = initialize_params(K)
+    while conv(new_lambdas,old_lambdas):
+        gamma = Estep(X,new_lambdas,new_pis)
+        old_lambdas, old_pis = new_lambdas, new_pis
+        new_lambdas, new_pis = MStep(gamma,X,old_lambdas)  
+    return gamma, new_lambdas, new_pis
+'''
+
+
+def ExpMax(X,K):
+    lambdas,pis = initialize_params(K)
+    for i in range(100000):
+        gamma = Estep(X,lambdas,pis)
+        lambdas,pis = MStep(gamma,X,lambdas)
+    return gamma, lambdas,pis
+
+def cluster(gamma):
+    posterior=pd.DataFrame(gamma).T
+    preds = posterior.idxmax(axis=1)
+    return preds
+
+g, l, p = ExpMax(X,K)
+
+preds=cluster(g)
 
 
 
-ans = loglik(X,z,l,p)
 
